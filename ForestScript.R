@@ -14,7 +14,7 @@ rf.predicts = list()
 df$V1 = as.factor(df$V1)
 for(i in 1:nfolds) {
   print(paste("Starting Fold", i))
-  rf.digits[[i]] = foreach(ntree=rep(2500,6), .combine=combine, .multicombine=TRUE, .packages='randomForest') %dopar% {
+  rf.digits[[i]] = foreach(ntree=101, .combine=combine, .multicombine=TRUE, .packages='randomForest') %dopar% {
     randomForest(df[subsets!=i, 2:151],df[subsets!=i,1], mtry=20, importance=T, keep.forest = TRUE, ntree=ntree)
   }
   rf.predicts[[i]] = predict(rf.digits[[i]], df[subsets==i,2:151])
