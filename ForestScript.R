@@ -6,7 +6,7 @@ library(randomForest)
 #It's too time-consuming to run on my computer, so I'll run it on an EC2 instance and save the results as an .RData file
 rf.digits = list()
 rf.predicts = list()
-rf_df = data.frame(cbind(scalable_digs[,1], pr.out[,1:150]))
+rf_df = df
 rf_df$V1 = as.factor(rf_df$V1)
 for(i in 1:nfolds) {
   print(paste("Starting Fold", i))
