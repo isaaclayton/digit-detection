@@ -11,7 +11,7 @@ rf.predicts = list()
 df$V1 = as.factor(df$V1)
 for(i in 1:nfolds) {
   print(paste("Starting Fold", i))
-  rf.digits[[i]] = randomForest(df[subsets!=i, 2:151],df[subsets!=i,1], mtry=20, importance=T, keep.forest = TRUE)
+  rf.digits[[i]] = randomForest(df[subsets!=i, 2:151],df[subsets!=i,1], mtry=20, importance=T, keep.forest = TRUE, type='classification')
   rf.predicts[[i]] = predict(rf.digits[[i]], df[subsets==i,2:151])
   print(paste("Done with Fold", i))
 }
