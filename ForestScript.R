@@ -1,4 +1,5 @@
 load(".RData")
+install.packages('randomForest')
 library(randomForest)
 
 #This script will return the random forest implementation
