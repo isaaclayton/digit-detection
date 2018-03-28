@@ -1,0 +1,197 @@
+---
+title: "Digit Detection Project"
+author: "Isaac Layton"
+date: "January 26, 2016"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r echo=FALSE}
+
+#--------------------------------------------------------------------
+kFolds = function(dataset, k) {
+  return(sample(1:k, nrow(dataset), replace=TRUE))
+}
+#--------------------------------------------------------------------
+load('~/Desktop/post-grad-learning/digit_detection/Computer.RData')
+#--------------------------------------------------------------------
+Cols=function(vec) {
+  cols=rainbow(length(unique(vec)))
+  return(cols[as.numeric(as.factor(vec))])
+}
+#--------------------------------------------------------------------
+
+```
+
+
+#Description
+
+  The MNIST dataset is a popular introduction into image classification. It was created by the National Institute of Standards and Technology and contains gray-scale pixelated images of digits hand-drawn by 500 participants. Each digit is recorded in the dataset using the darkness of each pixel; for a 28-by-28 pixel image, this equates to 784 different variables. The goal of this project was to clean and subset the data using dimension reduction and k-Fold cross validation techniques, and then use machine learning and nonparametric techniques to perform digit classification.
+  
+#Data Pre-processing
+
+  The first step in this process was visualizing what the digits looked like. Plotting the points using multiple boxes and encoding the darkness as hexidecimal values gave a clear look at digits:
+  
+```{r echo=TRUE}
+#--------------------------------------------------------------------------------
+pixpos = function(n) {
+  y = 27-floor(n/28)
+  x = n%%28
+  return(c(x,y))
+}
+#--------------------------------------------------------------------------------
+num2hex = function(n) {
+  n = 255-n
+  first = floor(n/16)
+  second = n%%16
+  if (first>9) {
+    first = rawToChar(as.raw(first+55))
+  }
+  if (second>9) {
+    second = rawToChar(as.raw(second+55))
+  }
+  both = paste(c(toString(first), toString(second)), collapse="")
+  return(paste(c("#",both,both,both),collapse=""))
+}
+#--------------------------------------------------------------------------------
+digitmap = function(col_list) {
+  plot(c(0,28), c(0,28), type="n", xlab="Pixel Row", ylab="Pixel Column")
+  abline(v=(seq(0,28,1)), col="lightgray")
+  abline(h=(seq(0,28,1)), col="lightgray")
+  for (i in 2:785) {
+    b = pixpos(i-2)
+    if (col_list[i]>0) {
+      rect(b[1], b[2], b[1]+1, b[2]+2, col=num2hex(col_list[i]),
+           border='black')
+    }
+  }
+}
+#--------------------------------------------------------------------------------
+digitmap(digits[21,])
+```
+
+  Because the data contains 42,000 observations and 784 pixel location variables, some row and column reduction was necessary to make computations faster. 
+  
+  To reduce the number of observations, the data was randomly divided into 10 subsets, each having around 4100-4300 obversations. This also allowed for cross-validation: by using each one of the subsets to create a model and predict the other 9, we can more accurately quantify the test error. 
+
+  To reduce the number of factors, principal component analysis was performed. To make this type of analysis possible, factors that contained no variance (pixels that had the same darkness level for every observation) had to be removed. This mainly got rid of the white space surrounding each digit. With the principal components, 81% of the variation could be explained with just 150 factors:
+  
+```{r echo=FALSE}
+#par(mfrow=c(1,2))
+pr.var=pr.out$sdev ^2
+pve=pr.var/sum(pr.var)
+#plot(pve, xlab="Principal Component", ylab="Proportion of Variance Explained ", ylim=c(0,1),type='b')
+plot(cumsum(pve), xlab="Number of principal component factors", ylab=" Cumulative Proportion of Variance Explained ", ylim=c(0,1), type='b')
+abline(h=cumsum(pve)[150])
+```
+
+Plotting the first and second principal components against each other, you can start to see some patterns on where digits tend to appear in respect to these new variables:
+
+```{r echo=FALSE}
+graphsubset = kFolds(cbind(scalable_digs[,1],pr.out$x[1:150]),100)
+plot(pr.out$x[graphsubset==1,1:2], col=Cols(scalable_digs[graphsubset==1,1]),
+     pch=19,
+       xlab="Principal Component 1",ylab="Principal Component 2", ylim=c(-21,20))
+legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
+plot(pr.out$x[graphsubset==1,c(1,3)], col=Cols(scalable_digs[graphsubset==1,1]), pch=19,
+       xlab="Principal Component 1",ylab="Principal Component 3", ylim=c(-33,15))
+legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
+# plot(pr.out$x[graphsubset==1,c(2,3)], col=Cols(scalable_digs[graphsubset==1,1]), pch=19,
+#        xlab="Principal Component 2",ylab="Principal Component 3", ylim=c(-33,15))
+# legend("bottom",legend=as.character(1:10), pch=19, col=rainbow(10), horiz=T)
+```
+
+#Quadratic Discriminant Analysis
+
+
+One way to go about classifying the data is to use quadratic discriminant analysis. This method incorporates Bayes Theorem by using the sample digit proportions to estimate prior digit probabilities and, under the assumption that the data follows a multivariate Normal distribution, using sample means and covariance matrixes to estimate parameters. Whichever digit gives the highest probability is chosen.
+
+This method involved the use of the function 'qda' located in the MASS library package, as well as the predict function already in R's STAT library. 
+
+Using quadratic discriminant analysis on a subset of the digits was a successful way to classify the other subsets. Using cross-validation, we got the following table comparing the model's predicted digit against the actual digit:
+
+```{r echo=FALSE}
+table(qda.class[[1]], scalable_digs[qda.digitsubset==1, 1], dnn=c("QDA Predicted", "Actual"))
+kfoldpercentages = vector()
+for (i in 1:10){
+  kfoldpercentages = c(kfoldpercentages, sum(qda.class[[i]]==scalable_digs[qda.digitsubset==i,1])/length(qda.class[[i]]))
+}
+```
+
+Taking the average accuracy of the 10 different folds, quadratic discriminant analysis predicts about `r mean(kfoldpercentages)*100`% of the numbers correctly.
+
+```{r echo=FALSE}
+# qda.sub = kFolds(scalable_digs[qda.digitsubset==1,], 50)
+# par(mfrow=c(1,2))
+# plot(pr.out$x[qda.digitsubset==1,1:2][qda.sub==1,], col=Cols(scalable_digs[qda.digitsubset==1,1][qda.sub==1]),
+#      pch=19, xlim=c(-15,18),
+#        xlab="Principal Component 1",ylab="Principal Component 2")
+# legend("right",legend=as.character(1:10), pch=19, col=rainbow(10))
+# plot(pr.out$x[qda.digitsubset==1,1:2][qda.sub==1,], col=Cols(qda.class[[1]][qda.sub==1]),
+#      pch=19,xlim=c(-15,18),
+#        xlab="Principal Component 1",ylab="Principal Component 2")
+```
+
+
+#Random Forests
+
+```{r echo=FALSE}
+load('~/Desktop/post-grad-learning/digit_detection/Forest.RData')
+rf.digitsubset = digitsubset
+rf.percentages = vector()
+for (i in 1:10){
+  rf.percentages = c(rf.percentages, sum(rf.predicts[[i]]==scalable_digs[rf.digitsubset==i,1])/length(rf.predicts[[i]]))
+}
+```
+
+
+Another way to classify the data was to use random forests. Random forests use decision trees on bootstrapped training samples that each include only a subset of the predictors to increase reliability. Using the 10-fold cross validaton techinique gives an accuracy of `r mean(rf.percentages)*100`%. Below is the predicted vs. actual digit plot: 
+```{r echo=FALSE}
+table(rf.predicts[[1]], scalable_digs[rf.digitsubset==1, 1], 
+      dnn=c("KNN Predicted", "Actual"))
+```
+
+```{r echo=FALSE}
+# rf.sub = kFolds(scalable_digs[rf.digitsubset==1,], 50)
+# par(mfrow=c(1,2))
+# plot(pr.out[rf.digitsubset==1,1:2][rf.sub==1,], col=Cols(scalable_digs[rf.digitsubset==1,1][rf.sub==1]),
+#      pch=19,
+#        xlab="Principal Component 1",ylab="Principal Component 2", xlim=c(-20,20))
+# legend("right",legend=as.character(1:10), pch=19, col=rainbow(10))
+# plot(pr.out[rf.digitsubset==1,1:2][rf.sub==1,], col=Cols(rf.predicts[[1]][rf.sub==1]),
+#      pch=19,xlim=c(-20,20),
+#        xlab="Principal Component 1",ylab="Principal Component 2")
+```
+
+#K-Nearest Neighbors
+
+The final way that the data was classified was using a K-Nearest Neighbors approach. K-Nearest neighbors is fairly easy to understand, in that it takes the k training observations that are closest (using Euclidean distance) to the test observation and assigns it the most frequent response value. Here is how the predicted digit compared to the actual digit:
+```{r echo=FALSE}
+load('~/Desktop/post-grad-learning/digit_detection/knn.RData')
+knn.digitsubset = digitsubset
+table(knntests[[1]], scalable_digs[knn.digitsubset==1, 1], dnn=c("KNN Predicted", "Actual"))
+knnpercentages = vector()
+for (i in 1:10){
+  knntests[[i]] = knntests[[i]]-1
+  knnpercentages = c(knnpercentages, sum(knntests[[i]]==scalable_digs[knn.digitsubset==i,1])/length(knntests[[i]]))
+}
+```
+Predicting the test digits' values using the 5 closest training digits gave us a cross-validated accuracy of `r mean(knnpercentages)*100`%. 
+
+```{r echo=FALSE}
+# knn.sub = kFolds(scalable_digs[knn.digitsubset==1,], 50)
+# par(mfrow=c(1,2))
+# plot(pr.out[knn.digitsubset==1,1:2][knn.sub==1,], col=Cols(scalable_digs[knn.digitsubset==1,1][knn.sub==1]),
+#      pch=19,
+#        xlab="Principal Component 1",ylab="Principal Component 2", xlim=c(-25,22))
+# legend("right",legend=as.character(1:10), pch=19, col=rainbow(10))
+# plot(pr.out[knn.digitsubset==1,1:2][knn.sub==1,], col=Cols(knntests[[1]][knn.sub==1]),
+#      pch=19,xlim=c(-25,22),
+#        xlab="Principal Component 1",ylab="Principal Component 2")
+```
+
+#Conclusion
+
+Given the three different methods chosen to classify the handwritten digits, the one that ended up doing the best (K-nearest neighbors) was the least complex. This is not to say that different complex models could not classify the data better (Yann LeCun of the Courant Institute at NYU shows several of these models at http://yann.lecun.com/exdb/mnist/). One particular model that has shown to be successful recently in image recognition is the convolutional neural network (ConvNets). In addition, further pre-processing could have reduced the error. 
