@@ -1,12 +1,14 @@
 load(".RData")
 if(!require(randomForest)) install.packages('randomForest', repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages('data.table', repos = "http://cran.us.r-project.org")
 library(randomForest)
+library(data.table)
 
 #This script will return the random forest implementation
 #It's too time-consuming to run on my computer, so I'll run it on an EC2 instance and save the results as an .RData file
 rf.digits = list()
 rf.predicts = list()
-rf_df = df
+rf_df = data.table(df)
 rf_df$V1 = as.factor(rf_df$V1)
 for(i in 1:nfolds) {
   print(paste("Starting Fold", i))
