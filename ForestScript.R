@@ -12,7 +12,7 @@ rf_df = data.table(df)
 rf_df$V1 = as.factor(rf_df$V1)
 for(i in 1:nfolds) {
   print(paste("Starting Fold", i))
-  rf.digs[[i]] = randomForest(rf_df[subsets!=i, 2:151],rf_df[subsets!=i,1], mtry=20, importance=T, keep.forest = TRUE)
+  rf.digs[[i]] = randomForest(rf_df[subsets!=i, 2:151],rf_df[subsets!=i,1][[1]], mtry=20, importance=T, keep.forest = TRUE)
   rf.predicts[[i]] = predict(rf.digits[[i]], rf_df[subsets==i,2:151])
   print(paste("Done with Fold", i))
 }
