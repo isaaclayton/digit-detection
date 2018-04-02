@@ -1,6 +1,5 @@
 load(".RData")
 if(!require(randomForest)) install.packages('randomForest', repos = "http://cran.us.r-project.org")
-if(!require(doMC)) install.packages('doMC', repos = "http://cran.us.r-project.org")
 library(randomForest)
 
 #This script will return the random forest implementation
