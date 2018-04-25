@@ -1,3 +1,5 @@
 *.RData
 *.csv
 .RHistory
+Digit_Detection_files
+.html
