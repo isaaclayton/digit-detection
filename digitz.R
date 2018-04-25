@@ -11,6 +11,11 @@ Cols=function(vec) {
   return(cols[as.numeric(as.factor(vec))])
 }
 #--------------------------------------------------------------------------------
+#Subset the data into two sections
+subsetFunc = function(data, proportion) {
+  return(sample(1:NROW(data), NROW(data)*proportion))
+}
+#--------------------------------------------------------------------------------
 #See if x is full row rank
 is.uniq = function(x) {
   if(length(unique(x))==1) {
@@ -53,7 +58,7 @@ digitmap = function(col_list) {
     }
   }
 }
-#--------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #
 knnclass = function(x, trainx, trainy, k) {
   new = apply(dist2(x,trainx), 1, function(g) 
@@ -61,22 +66,41 @@ knnclass = function(x, trainx, trainy, k) {
     [which.max(tabulate(as.factor(trainy[match(sort(g, partial=1:k)[1:k],g)])))])
   return(new)
 }
-#--------------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
+#QDA Function
+QDAFunc = function(testx, trainx, trainy) {
+  y_set = sort(unique(trainy))
+  cov_k = by(trainx, trainy, cov)
+  cov_inv = lapply(cov_k, solve)
+  prop_k = by(trainy, trainy, FUN=function(x) length(x)/length(trainy))
+  mean_k = apply(trainx, 2, FUN= function(x) by(unlist(x), trainy, mean))
+  subtract = sapply(c(1:length(y_set)), FUN=function(i) (-0.5*(t(mean_k[i,])%*%cov_inv[[i]]%*%mean_k[i,]) 
+                                              - (0.5*log(det(cov_k[[i]])))+ log(prop_k[i])))
+  QDA_vals = apply(testx, 1, FUN=function(x) y_set[which.max(lapply(c(1:length(y_set)), FUN= function(i) (
+    -0.5*(t(x)%*%cov_inv[[i]]%*%as.matrix(x)) + (t(x)%*%cov_inv[[i]]%*%mean_k[i,]) + subtract[i])))])
+  return(QDA_vals)
+}
+#-------------------------------------------------------------------------------
+#Random forest function?
+rfFunc = function(testx, trainx, trainy) {
+  
+}
+#-------------------------------------------------------------------------------
 dir = "~/Desktop/post-grad-learning/digit_detection"
 
 setwd(dir)
 load(paste(dir, '/.RData', sep=""))
 save.image(paste(dir, '/.RData', sep=""))
 
+#install.packages('ISLR')
+#install.packages('glmnet')
+#install.packages('gam')
+#install.packages('tree')
+#install.packages('flexclust')
 library(MASS)
 library(Matrix)
 library(randomForest)
-install.packages('ISLR')
-install.packages('glmnet')
-install.packages('gam')
-install.packages('tree')
-
+library(flexclust)
 
 digits = read.csv("trainingdigits.csv", header=T)
 
@@ -85,35 +109,49 @@ scalable_digs = digits[,which(apply(digits, 2, var, na.rm=T) != 0)]
 
 #Output principal component variables
 pr.out = prcomp(scalable_digs[,-1], scale=T)
+pr.var=pr.out$sdev ^2
+pve=pr.var/sum(pr.var)
+#plot(pve, xlab="Principal Component", ylab="Proportion of Variance Explained ", ylim=c(0,1),type='b')
+plot(cumsum(pve), xlab="Number of principal component factors", ylab=" Cumulative Proportion of Variance Explained ", ylim=c(0,1), type='b')
+abline(h=cumsum(pve)[225])
+cumsum(pve)[225]
 df = data.frame(cbind(scalable_digs[,1], pr.out$x[,1:150]))
+
+rm(scalable_digs)
+rm(pr.out)
+
+test_divide = subsetFunc(df, 0.8)
+test = df[-test_divide,]
+training = df[test_divide,]
+validation_divide = subsetFunc(training, 0.8)
+validation = training[-validation_divide,]
+training = training[validation_divide,]
 
 #Create nfold separate subsets of the data to later test the accuracy of each method
 nfolds = 10
 subsets = kFolds(df[,1], nfolds)
 
-
 #Applying QDA to the dataset
-qda.fit = list()
-qda.class = list()
-for(i in 1:nfolds) {
-  qda.fit[[i]] = qda(df[subsets!=i, 2:150],df[subsets!=i,1])
-  qda.class[[i]] = predict(qda.fit[[i]], df[subsets==i, 2:150])$class
-}
-table(qda.class[[1]], scalable_digs[subsets==1, 1])
+qda_model = QDAFunc(validation[, 2:150], training[, 2:150], training[[1]])
+table(qda_model, validation[,1])
+qda_percentage = sum(qda_model==validation[,1])/length(qda_model)
 
-#
-kfoldpercentages = vector()
-for (i in 1:10){
-  kfoldpercentages = c(kfoldpercentages, sum(qda.class[[i]]==scalable_digs[subsets==i,1])/length(qda.class[[i]]))
+
+knntests = list()
+for(i in 1:nfolds){
+  knntests[[i]] = knnclass(df[subsets==i,2:150],
+                           df[subsets!=i,2:150], df[subsets!=i,1],
+                           k=5)
+  print("One more done!")
 }
-mean(kfoldpercentages)
-load('~/Dropbox/Layton-SeniorProject/Forest.RData')
-rf.digitsubset = digitsubset
-table(rf.predicts[[1]], scalable_digs[rf.digitsubset==1, 1], 
-      dnn=c("KNN Predicted", "Actual"))
+print("Done")
+
+load(paste(dir, '/Forest.RData', sep=""))
+table(rf.predicts[[1]], df[subsets==1, 1], 
+      dnn=c("Predicted", "Actual"))
 rf.percentages = vector()
 for (i in 1:10){
-  rf.percentages = c(rf.percentages, sum(rf.predicts[[i]]==scalable_digs[rf.digitsubset==i,1])/length(rf.predicts[[i]]))
+  rf.percentages = c(rf.percentages, sum(rf.predicts[[i]]==df[subsets==i,1])/length(rf.predicts[[i]]))
 }
 mean(rf.percentages)
 save.image('~/Dropbox/Layton-SeniorProject/knn.RData')
@@ -125,5 +163,12 @@ for (i in 1:10){
   knnpercentages = c(knnpercentages, sum(knntests[[i]]==scalable_digs[digitsubset==i,1])/length(knntests[[i]]))
 }
 mean(knnpercentages)
+install.packages("plot3D")
+library("plot3D")
 
-knntests[[1]][1:10]
+graphsubset = kFolds(df,50)
+scatter3D(df[graphsubset==1,2],df[graphsubset==1,3],df[graphsubset==1,4], colvar = as.numeric(df[graphsubset==1,1]))
+plot(df[graphsubset==1,2:3], col=Cols(df[graphsubset==1,1]),
+     pch=19,
+     xlab="Principal Component 1",ylab="Principal Component 2", ylim=c(-21,20))
+legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
