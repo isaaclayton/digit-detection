@@ -119,7 +119,7 @@ QDAFunc = function(testx, trainx, trainy) {
 }
 ```
 
-Using quadratic discriminant analysis on a subset of the digits was a successful way to classify the other subsets. Using cross-validation, we got the following table comparing the model's predicted digit against the actual digit:
+Using quadratic discriminant analysis on a subset of the digits was a moderately successful way to classify the other subsets. Testing the training set against the validation set, I got the following table comparing the model's predicted digit against the actual digit:
 
 ```{r echo=FALSE}
 table(qda_model, validation[, 1], dnn=c("QDA Predicted", "Actual"))

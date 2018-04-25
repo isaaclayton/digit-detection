@@ -1,4 +1,7 @@
 load(".RData")
+if(!require(flexclust)) install.packages('flexclust', repos = "http://cran.us.r-project.org")
+library(flexclust)
+
 knntests = list() 
 for(i in 1:15){
   knntests[[i]] = knnclass(validation[,2:226],

@@ -75,7 +75,7 @@ QDAFunc = function(testx, trainx, trainy) {
   prop_k = by(trainy, trainy, FUN=function(x) length(x)/length(trainy))
   mean_k = apply(trainx, 2, FUN= function(x) by(unlist(x), trainy, mean))
   subtract = sapply(c(1:length(y_set)), FUN=function(i) (-0.5*(t(mean_k[i,])%*%cov_inv[[i]]%*%mean_k[i,]) 
-                                              - (0.5*log(det(cov_k[[i]])))+ log(prop_k[i])))
+                                              - (0.5*unlist(determinant(cov_k[[i]]))[1])+ log(prop_k[i])))
   QDA_vals = apply(testx, 1, FUN=function(x) y_set[which.max(lapply(c(1:length(y_set)), FUN= function(i) (
     -0.5*(t(x)%*%cov_inv[[i]]%*%as.matrix(x)) + (t(x)%*%cov_inv[[i]]%*%mean_k[i,]) + subtract[i])))])
   return(QDA_vals)
@@ -134,10 +134,9 @@ rm(test_divide)
 rm(df)
 
 #Applying QDA to the dataset
-qda_model = QDAFunc(validation[, 2:150], training[, 2:150], training[[1]])
+qda_model = QDAFunc(validation[, 2:226], training[, 2:226], training[[1]])
 table(qda_model, validation[,1])
 qda_percentage = sum(qda_model==validation[,1])/length(qda_model)
-
 
 knntests = list()
 for(i in 1:nfolds){
