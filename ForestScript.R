@@ -9,12 +9,8 @@ library(randomForest)
 rf.digits = list()
 rf.predicts = list()
 #df$V1 = as.factor(df$V1)
-for(i in 1:10) {
-  print(paste("Starting ", i))
-  rf.digits[[i]] = randomForest(training[, 2:151],training[,1], mtry=i*5, importance=T, keep.forest = TRUE)
-  rf.predicts[[i]] = predict(rf.digits[[i]], validation[,2:151])
-  print(paste("Done with ", i*5))
-}
+rf.digit = randomForest(training[, 2:226],training[,1], mtry=15, importance=T, keep.forest = TRUE)
+rf.predict = predict(rf.digits[[i]], validation[,2:226])
 warns = warnings()
 #hi isaac (:
 print("Done")

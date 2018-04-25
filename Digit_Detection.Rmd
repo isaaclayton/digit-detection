@@ -66,7 +66,7 @@ digitmap = function(col_list) {
   }
 }
 #--------------------------------------------------------------------------------
-digitmap(digits[21,])
+digitmap(sample_digit)
 ```
 
   Because the data contains 42,000 observations and 784 pixel location variables, some row and column reduction was necessary to make computations faster. 
@@ -84,8 +84,8 @@ abline(h=cumsum(pve)[225])
 Using PCA also allows you to visualize the data easier. It'd be useless to plot one pixel against another, and plotting more than 3 pixel locations against each other would be impossible with a single scatterplot. With PCA variables though, since they're linear combinations of every pixe location, we can easily visualize the relationship between the digits. Plotting the first and second principal components against each other, you can start to see some patterns:
 
 ```{r echo=FALSE}
-graphsubset = kFolds(df,100)
-plot(df[graphsubset==1,2:3], col=Cols(df[graphsubset==1,1]),
+graphsubset = kFolds(training,100)
+plot(training[graphsubset==1,2:3], col=Cols(training[graphsubset==1,1]),
      pch=19,
        xlab="Principal Component 1",ylab="Principal Component 2", ylim=c(-21,20))
 legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
@@ -122,14 +122,11 @@ QDAFunc = function(testx, trainx, trainy) {
 Using quadratic discriminant analysis on a subset of the digits was a successful way to classify the other subsets. Using cross-validation, we got the following table comparing the model's predicted digit against the actual digit:
 
 ```{r echo=FALSE}
-table(qda.class[[1]], df[subsets==1, 1], dnn=c("QDA Predicted", "Actual"))
-kfoldpercentages = vector()
-for (i in 1:nfolds){
-  kfoldpercentages = c(kfoldpercentages, sum(qda.class[[i]]==df[subsets==i,1])/length(qda.class[[i]]))
-}
+table(qda_model, validation[, 1], dnn=c("QDA Predicted", "Actual"))
+kfoldpercentages = sum(qda_model==validation[,1])/length(qda_model)
 ```
 
-Taking the average accuracy of the 10 different folds, quadratic discriminant analysis predicts about `r mean(kfoldpercentages)*100`% of the numbers correctly.
+Taking the average accuracy of the 10 different folds, quadratic discriminant analysis predicts about `r kfoldpercentages*100`% of the numbers correctly.
 
 ```{r echo=FALSE}
 # qda.sub = kFolds(scalable_digs[qda.digitsubset==1,], 50)
@@ -177,16 +174,16 @@ table(rf.predicts[[1]], df[subsets==1, 1],
 
 The final way that the data was classified was using a K-Nearest Neighbors approach. K-Nearest neighbors is fairly easy to understand, in that it takes the k training observations that are closest (using Euclidean distance) to the test observation and assigns it the most frequent response value. Here is how the predicted digit compared to the actual digit:
 ```{r echo=FALSE}
-load('~/Desktop/post-grad-learning/digit_detection/knn.RData')
-knn.digitsubset = digitsubset
-table(knntests[[1]], df[knn.digitsubset==1, 1], dnn=c("KNN Predicted", "Actual"))
-knnpercentages = vector()
-for (i in 1:10){
-  knntests[[i]] = knntests[[i]]-1
-  knnpercentages = c(knnpercentages, sum(knntests[[i]]==df[knn.digitsubset==i,1])/length(knntests[[i]]))
-}
+#load('~/Desktop/post-grad-learning/digit_detection/knn.RData')
+#knn.digitsubset = digitsubset
+#table(knntests[[1]], df[knn.digitsubset==1, 1], dnn=c("KNN Predicted", "Actual"))
+#knnpercentages = vector()
+#for (i in 1:10){
+#  knntests[[i]] = knntests[[i]]-1
+#  knnpercentages = c(knnpercentages, sum(knntests[[i]]==df[knn.digitsubset==i,1])/length(knntests[[i]]))
+#}
 ```
-Predicting the test digits' values using the 5 closest training digits gave us a cross-validated accuracy of `r mean(knnpercentages)*100`%. 
+Predicting the test digits' values using the 5 closest training digits gave us a cross-validated accuracy of %. 
 
 ```{r echo=FALSE}
 # knn.sub = kFolds(scalable_digs[knn.digitsubset==1,], 50)

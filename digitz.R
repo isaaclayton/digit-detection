@@ -116,7 +116,7 @@ pve=pr.var/sum(pr.var)
 plot(cumsum(pve), xlab="Number of principal component factors", ylab=" Cumulative Proportion of Variance Explained ", ylim=c(0,1), type='b')
 abline(h=cumsum(pve)[225])
 cumsum(pve)[225]
-df = data.frame(cbind(scalable_digs[,1], pr.out$x[,1:150]))
+df = data.frame(cbind(scalable_digs[,1], pr.out$x[,1:225]))
 
 rm(scalable_digs)
 rm(pr.out)
@@ -132,10 +132,6 @@ rm(validation_divide)
 rm(test_divide)
 
 rm(df)
-
-#Create nfold separate subsets of the data to later test the accuracy of each method
-nfolds = 10
-subsets = kFolds(df[,1], nfolds)
 
 #Applying QDA to the dataset
 qda_model = QDAFunc(validation[, 2:150], training[, 2:150], training[[1]])
