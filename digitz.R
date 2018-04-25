@@ -138,22 +138,10 @@ qda_model = QDAFunc(validation[, 2:226], training[, 2:226], training[[1]])
 table(qda_model, validation[,1])
 qda_percentage = sum(qda_model==validation[,1])/length(qda_model)
 
-knntests = list()
-for(i in 1:nfolds){
-  knntests[[i]] = knnclass(df[subsets==i,2:150],
-                           df[subsets!=i,2:150], df[subsets!=i,1],
-                           k=5)
-  print("One more done!")
-}
-print("Done")
-
 load(paste(dir, '/Forest.RData', sep=""))
-table(rf.predicts[[1]], df[subsets==1, 1], 
+table(rf.predict, validation[, 1], 
       dnn=c("Predicted", "Actual"))
-rf.percentages = vector()
-for (i in 1:10){
-  rf.percentages = c(rf.percentages, sum(rf.predicts[[i]]==df[subsets==i,1])/length(rf.predicts[[i]]))
-}
+rf.percentage = sum(rf.predict==validation[,1])/length(rf.predict)
 mean(rf.percentages)
 save.image('~/Dropbox/Layton-SeniorProject/knn.RData')
 knn.digitsubset = digitsubset
@@ -164,12 +152,3 @@ for (i in 1:10){
   knnpercentages = c(knnpercentages, sum(knntests[[i]]==scalable_digs[digitsubset==i,1])/length(knntests[[i]]))
 }
 mean(knnpercentages)
-install.packages("plot3D")
-library("plot3D")
-
-graphsubset = kFolds(df,50)
-scatter3D(df[graphsubset==1,2],df[graphsubset==1,3],df[graphsubset==1,4], colvar = as.numeric(df[graphsubset==1,1]))
-plot(df[graphsubset==1,2:3], col=Cols(df[graphsubset==1,1]),
-     pch=19,
-     xlab="Principal Component 1",ylab="Principal Component 2", ylim=c(-21,20))
-legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)

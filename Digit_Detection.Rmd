@@ -81,7 +81,7 @@ plot(cumsum(pve), xlab="Number of principal components", ylab=" Cumulative Propo
 abline(h=cumsum(pve)[225])
 ```
 
-Using PCA also allows you to visualize the data easier. It'd be useless to plot one pixel against another, and plotting more than 3 pixel locations against each other would be impossible with a single scatterplot. With PCA variables though, since they're linear combinations of every pixe location, we can easily visualize the relationship between the digits. Plotting the first and second principal components against each other, you can start to see some patterns:
+Using PCA also allows you to visualize the data easier. It wouldn't be very informative to plot one pixel against another, and plotting more than 3 pixel locations against each other would be impossible with a single scatterplot. With PCA variables though, since they're linear combinations of every pixel location, we can easily visualize the relationship between the digits. Plotting the first and second principal components against each other, you can start to see some patterns:
 
 ```{r echo=FALSE}
 graphsubset = kFolds(training,100)
@@ -100,7 +100,15 @@ legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
 #Quadratic Discriminant Analysis
 
 
-The first method I chose to classify the data with was quadratic discriminant analysis. This method incorporates [Bayes Theorem](https://brilliant.org/wiki/bayes-theorem/) to estimate $\Pr(Y = k{\mid}X = x)$ using the sample proportion of each digit to estimate prior digit probabilities and, under the assumption that the data follows a multivariate Normal distribution, using sample means and covariance matrixes to estimate parameters. Whichever digit gives the highest probability is chosen.
+The first method I chose to classify the data with was quadratic discriminant analysis. This method incorporates [Bayes Theorem](https://brilliant.org/wiki/bayes-theorem/) to estimate $\Pr(Y = k{\mid}X = x)$, the probability of a digit being $k$ given that the observation's principal components looking the way they do. Bayes Theorem states that
+\[
+\Pr(Y = k{\mid}X = x) = \frac{\Pr(X = x{\mid}Y = k)\Pr(Y = k)}{\Pr(X = x)}
+\]
+The first part of the numerator, $\Pr(X = x{\mid}Y = k)$, can be estimated with $k$ different multivariate Normal distributions with the mean and variance being estimated respectively by the sample average and sample covariance matrix for observations that are the $k^{th}$ digit. The second part of the numerator, $\Pr(Y = k)$ is estimated by the proportion of observations that come from digit $k$.
+
+The demominator, $\Pr(X = x)$, can be estimated by 
+
+and the variance being estimated by the for observations coming from classsing the sample proportion of each digit to estimate prior digit probabilities and, under the assumption that the data follows a multivariate Normal distribution, using sample means and covariance matrixes to estimate parameters. Whichever digit gives the highest probability is chosen.
 
 I originally involved the use of the function 'qda' located in the MASS library package, but decided that it was easy enough to incorporate the equation into my own function:
 
@@ -119,14 +127,14 @@ QDAFunc = function(testx, trainx, trainy) {
 }
 ```
 
-Using quadratic discriminant analysis on a subset of the digits was a moderately successful way to classify the other subsets. Testing the training set against the validation set, I got the following table comparing the model's predicted digit against the actual digit:
+Using quadratic discriminant analysis on a subset of the digits was a moderately successful way to classify the other subsets. Testing the training set against the validation set, we found the following predictions:
 
 ```{r echo=FALSE}
 table(qda_model, validation[, 1], dnn=c("QDA Predicted", "Actual"))
-kfoldpercentages = sum(qda_model==validation[,1])/length(qda_model)
+kfoldpercentage = sum(qda_model==validation[,1])/length(qda_model)
 ```
 
-Taking the average accuracy of the 10 different folds, quadratic discriminant analysis predicts about `r kfoldpercentages*100`% of the numbers correctly.
+Quadratic discriminant analysis predicted about `r kfoldpercentage*100`% of the digits correctly. 
 
 ```{r echo=FALSE}
 # qda.sub = kFolds(scalable_digs[qda.digitsubset==1,], 50)
