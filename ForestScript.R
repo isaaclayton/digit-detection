@@ -8,7 +8,7 @@ library(randomForest)
 #subsets = kFolds(df[,1], nfolds)
 rf.digits = list()
 rf.predicts = list()
-df$V1 = as.factor(df$V1)
+#df$V1 = as.factor(df$V1)
 for(i in 1:10) {
   print(paste("Starting ", i))
   rf.digits[[i]] = randomForest(training[, 2:151],training[,1], mtry=i*5, importance=T, keep.forest = TRUE)

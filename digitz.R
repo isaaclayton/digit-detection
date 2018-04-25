@@ -103,6 +103,7 @@ library(randomForest)
 library(flexclust)
 
 digits = read.csv("trainingdigits.csv", header=T)
+sample_digit = digits[21,]
 
 #Only keeps pixel locations that have a variance of > 0
 scalable_digs = digits[,which(apply(digits, 2, var, na.rm=T) != 0)]
@@ -119,6 +120,7 @@ df = data.frame(cbind(scalable_digs[,1], pr.out$x[,1:150]))
 
 rm(scalable_digs)
 rm(pr.out)
+rm(digits)
 
 test_divide = subsetFunc(df, 0.8)
 test = df[-test_divide,]
@@ -126,6 +128,10 @@ training = df[test_divide,]
 validation_divide = subsetFunc(training, 0.8)
 validation = training[-validation_divide,]
 training = training[validation_divide,]
+rm(validation_divide)
+rm(test_divide)
+
+rm(df)
 
 #Create nfold separate subsets of the data to later test the accuracy of each method
 nfolds = 10
