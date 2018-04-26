@@ -65,8 +65,10 @@ knnclass = function(x, trainx, trainy, k) {
   dists = dist2(x,trainx)
   #new = apply(dist2(x,trainx), 1, function(g) 
     #y_set[which.max(tabulate(as.factor(trainy[match(sort(g, partial=1:k)[1:k],g)])))])
+  #new = apply(dists, 1, function(g) 
+   # y_set[which.max(table(trainy[order(g)[1:k]]))])
   new = apply(dists, 1, function(g) 
-    y_set[which.max(table(trainy[order(g)[1:k]]))])
+    y_set[which.max(tabulate(trainy[order(g)[1:k]]+1))])
   return(new)
 }
 #-------------------------------------------------------------------------------

@@ -2,10 +2,7 @@
 title: "Digit Detection Project"
 author: "Isaac Layton"
 date: "January 26, 2016"
-output:
-  html_document: default
-  pdf_document: default
-  word_document: default
+output: html_notebook
 ---
 
 ```{r echo=FALSE}
@@ -169,7 +166,7 @@ table(rf.predict, validation[, 1],
 
 #K-Nearest Neighbors
 
-The final way that the data was classified was using a K-Nearest Neighbors approach. K-Nearest neighbors is fairly easy to understand, in that it takes the k training observations that are closest (using Euclidean distance) to the test observation and assigns it the most frequent response value. Here is how the predicted digit compared to the actual digit:
+K-Nearest Neighbors was the final way in which the data was classified. K-Nearest neighbors involves takng the $k$ observations that are closest (using Euclidean distance) to the test observation and assigns it the most frequent response value. Here is how the predicted digit compared to the actual digit:
 ```{r echo=FALSE}
 #load('~/Desktop/post-grad-learning/digit_detection/knn.RData')
 #knn.digitsubset = digitsubset
