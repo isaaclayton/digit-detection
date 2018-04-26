@@ -61,9 +61,12 @@ digitmap = function(col_list) {
 #-------------------------------------------------------------------------------
 #
 knnclass = function(x, trainx, trainy, k) {
-  new = apply(dist2(x,trainx), 1, function(g) 
-    levels(as.factor(trainy))
-    [which.max(tabulate(as.factor(trainy[match(sort(g, partial=1:k)[1:k],g)])))])
+  y_set = levels(as.factor(trainy))
+  dists = dist2(x,trainx)
+  #new = apply(dist2(x,trainx), 1, function(g) 
+    #y_set[which.max(tabulate(as.factor(trainy[match(sort(g, partial=1:k)[1:k],g)])))])
+  new = apply(dists, 1, function(g) 
+    y_set[which.max(table(trainy[order(g)[1:k]]))])
   return(new)
 }
 #-------------------------------------------------------------------------------
@@ -138,17 +141,18 @@ qda_model = QDAFunc(validation[, 2:226], training[, 2:226], training[[1]])
 table(qda_model, validation[,1])
 qda_percentage = sum(qda_model==validation[,1])/length(qda_model)
 
+#Applying Random Forests to the dataset
 load(paste(dir, '/Forest.RData', sep=""))
 table(rf.predict, validation[, 1], 
       dnn=c("Predicted", "Actual"))
 rf.percentage = sum(rf.predict==validation[,1])/length(rf.predict)
 mean(rf.percentages)
-save.image('~/Dropbox/Layton-SeniorProject/knn.RData')
-knn.digitsubset = digitsubset
-table(knntests[[1]],scalable_digs[knn.digitsubset==1,1])
+
+#Applying KNN to the dataset
+load(paste(dir, '/knn.RData', sep=""))
+table(knntests[[1]],validation[,1])
 knnpercentages = vector()
 for (i in 1:10){
-  knntests[[i]] = knntests[[i]]-1
-  knnpercentages = c(knnpercentages, sum(knntests[[i]]==scalable_digs[digitsubset==i,1])/length(knntests[[i]]))
+  knnpercentages = c(knnpercentages, sum(knntests[[i]]==validation[,1])/length(knntests[[i]]))
 }
 mean(knnpercentages)

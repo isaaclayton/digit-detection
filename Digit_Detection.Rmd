@@ -31,7 +31,7 @@ Cols=function(vec) {
 
 I began by creating a function to visualize what the digits looked like. Encoding the darkness as hexidecimal values and plotting the points gave a clear look at digits:
   
-```{r echo=TRUE}
+```{r echo=FALSE}
 #--------------------------------------------------------------------------------
 pixpos = function(n) {
   y = 27-floor(n/28)
@@ -100,15 +100,15 @@ legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
 #Quadratic Discriminant Analysis
 
 
-The first method I chose to classify the data with was quadratic discriminant analysis. This method incorporates [Bayes Theorem](https://brilliant.org/wiki/bayes-theorem/) to estimate $\Pr(Y = k{\mid}X = x)$, the probability of a digit being $k$ given that the observation's principal components looking the way they do. Bayes Theorem states that
+The first method I chose to classify the data with was quadratic discriminant analysis. This method incorporates [Bayes Theorem](https://brilliant.org/wiki/bayes-theorem/) to estimate $\Pr(Y = k{\mid}X = x)$, the probability of a digit being $k$ given the observation's pixel configuration. Bayes Theorem states that
 \[
 \Pr(Y = k{\mid}X = x) = \frac{\Pr(X = x{\mid}Y = k)\Pr(Y = k)}{\Pr(X = x)}
 \]
 The first part of the numerator, $\Pr(X = x{\mid}Y = k)$, can be estimated with $k$ different multivariate Normal distributions with the mean and variance being estimated respectively by the sample average and sample covariance matrix for observations that are the $k^{th}$ digit. The second part of the numerator, $\Pr(Y = k)$ is estimated by the proportion of observations that come from digit $k$.
 
-The demominator, $\Pr(X = x)$, can be estimated by 
+The demominator, $\Pr(X = x)$, can be estimated by summing up all of the $k$ possible numerators. This sum encapsulates the total probability between all digits that the observed value has its specific pixel arrangement.
 
-and the variance being estimated by the for observations coming from classsing the sample proportion of each digit to estimate prior digit probabilities and, under the assumption that the data follows a multivariate Normal distribution, using sample means and covariance matrixes to estimate parameters. Whichever digit gives the highest probability is chosen.
+Using this equation, we use log-likelihood to find which digit is most likely (has the highest probability) given the pixel locations and assign the observation to that digit.
 
 I originally involved the use of the function 'qda' located in the MASS library package, but decided that it was easy enough to incorporate the equation into my own function:
 
@@ -134,7 +134,7 @@ table(qda_model, validation[, 1], dnn=c("QDA Predicted", "Actual"))
 kfoldpercentage = sum(qda_model==validation[,1])/length(qda_model)
 ```
 
-Quadratic discriminant analysis predicted about `r kfoldpercentage*100`% of the digits correctly. 
+Quadratic discriminant analysis predicted about `r round(kfoldpercentage*100,2)`% of the digits correctly. 
 
 ```{r echo=FALSE}
 # qda.sub = kFolds(scalable_digs[qda.digitsubset==1,], 50)
@@ -153,29 +153,18 @@ Quadratic discriminant analysis predicted about `r kfoldpercentage*100`% of the 
 
 ```{r echo=FALSE}
 load('~/Desktop/post-grad-learning/digit_detection/Forest.RData')
-rf.percentages = vector()
-for (i in 1:10){
-  rf.percentages = c(rf.percentages, sum(rf.predicts[[i]]==df[subsets==i,1])/length(rf.predicts[[i]]))
-}
+rf.percentage = sum(rf.predict==validation[,1])/length(rf.predict)
 ```
 
 
-Another way to classify the data was to use random forests. Random forests use decision trees on bootstrapped training samples that each include only a subset of the predictors to increase reliability. Using the 10-fold cross validaton techinique gives an accuracy of `r mean(rf.percentages)*100`%. Below is the predicted vs. actual digit plot: 
+Another way to classify the data is to use random forests. A decision tree is a method of classifying observations by partioning the input space. It assigns the same prediction to all observations that fall into the same segment of the partition. It's called a tree because it starts with all observations as its "root". It then branches out by choosing the most efficient split in a predictor that will minimize the overall error. It continues doing this until a criterion is met. 
+
+  Random forests build on this concept. In a random forest, multiple decision trees are built using bootstrapped observations. An observation is assigned to the most common class predicted by these trees. Each tree includes only a subset of the predictors to increase reliability. The number of predictors to include in each tree tends to be $\sqrt{p}$ with $p$ being the number of predictors. This ensures that no variable will overpower every tree. 
+  
+  Using random forests on our data and predicting on the validation set gives an accuracy of `r round(rf.percentage*100,2)`%. Below is the predicted vs. actual digit plot: 
 ```{r echo=FALSE}
-table(rf.predicts[[1]], df[subsets==1, 1], 
+table(rf.predict, validation[, 1], 
       dnn=c("Predicted", "Actual"))
-```
-
-```{r echo=FALSE}
-# rf.sub = kFolds(scalable_digs[rf.digitsubset==1,], 50)
-# par(mfrow=c(1,2))
-# plot(pr.out[rf.digitsubset==1,1:2][rf.sub==1,], col=Cols(scalable_digs[rf.digitsubset==1,1][rf.sub==1]),
-#      pch=19,
-#        xlab="Principal Component 1",ylab="Principal Component 2", xlim=c(-20,20))
-# legend("right",legend=as.character(1:10), pch=19, col=rainbow(10))
-# plot(pr.out[rf.digitsubset==1,1:2][rf.sub==1,], col=Cols(rf.predicts[[1]][rf.sub==1]),
-#      pch=19,xlim=c(-20,20),
-#        xlab="Principal Component 1",ylab="Principal Component 2")
 ```
 
 #K-Nearest Neighbors
