@@ -2,7 +2,7 @@
 title: "Digit Detection Project"
 author: "Isaac Layton"
 date: "January 26, 2016"
-output: html_notebook
+output: html_document
 ---
 
 ```{r echo=FALSE}
