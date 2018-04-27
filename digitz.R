@@ -154,7 +154,8 @@ mean(rf.percentages)
 load(paste(dir, '/knn.RData', sep=""))
 table(knntests[[1]],validation[,1])
 knnpercentages = vector()
-for (i in 1:10){
+for (i in 1:15){
   knnpercentages = c(knnpercentages, sum(knntests[[i]]==validation[,1])/length(knntests[[i]]))
 }
 mean(knnpercentages)
+plot(knnpercentages)

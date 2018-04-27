@@ -13,6 +13,6 @@ knnclass = function(x, trainx, trainy, k) {
   }
   return(predictions)
 }
-knntests = knnclass(validation[,2:226],training[,2:226], training[,1], k=1:15)
+knntests = knnclass(validation[,2:226],training[,2:226], training[,1], k=5:25)
 print("Done")
 save.image("knn.RData")
