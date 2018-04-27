@@ -11,13 +11,12 @@ knnclass = function(x, trainx, trainy, k) {
   # y_set[which.max(table(trainy[order(g)[1:k]]))])
   predictions = list()
   for (i in k) {
-    predictions[[i]] = new = apply(dists, 1, function(g)
+    predictions[[i]] = apply(dists, 1, function(g)
       y_set[which.max(tabulate(trainy[dists[1:i]]+1))])
   }
   return(predictions)
 }
 
-knntests = list() 
-knntests[[i]] = knnclass(validation[,2:226],training[,2:226], training[,1], k=1:15)
+knntests = knnclass(validation[,2:226],training[,2:226], training[,1], k=1:15)
 print("Done")
 save.image("knn.RData")
