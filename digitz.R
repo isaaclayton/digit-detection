@@ -152,9 +152,9 @@ mean(rf.percentages)
 
 #Applying KNN to the dataset
 load(paste(dir, '/knn.RData', sep=""))
-table(knntests[[1]],validation[,1])
+table(knntests[[5]],validation[,1])
 knnpercentages = vector()
-for (i in 1:15){
+for (i in 5:25){
   knnpercentages = c(knnpercentages, sum(knntests[[i]]==validation[,1])/length(knntests[[i]]))
 }
 mean(knnpercentages)
