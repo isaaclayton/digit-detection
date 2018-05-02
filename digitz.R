@@ -64,7 +64,6 @@ knnclass = function(x, trainx, trainy, k) {
   y = as.factor(trainy)
   y_set = levels(y)
   dists = apply(dist2(x,trainx), 1, order)
-  return(dists)
   predictions = list()
   for (i in k) {
     predictions[[i]] = apply(dists, 2, function(g)
@@ -160,3 +159,6 @@ for (i in 1:25){
 }
 mean(knnpercentages)
 plot(knnpercentages)
+
+load(paste(dir, '/test.RData', sep=""))
+sum(test_data[[6]]==test[,1])/length(test_data)
