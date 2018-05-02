@@ -63,14 +63,14 @@ digitmap = function(col_list) {
 knnclass = function(x, trainx, trainy, k) {
   y = as.factor(trainy)
   y_set = levels(y)
-  dists = apply(dist2(x,trainx), 1, function(x) mapply(list, order(x), sort(x), simplify=F))
+  dists = apply(dist2(x,trainx), 1, order)
   return(dists)
   predictions = list()
   for (i in k) {
-    #predictions[[i]] = apply(dists, 2, function(g)
-    #y_set[which.max(tabulate(match(y[g[1:i]], y_set)))])
     predictions[[i]] = apply(dists, 2, function(g)
-      mapply(list, y[g[[1]][1:i]], g[[2]][1:i], SIMPLIFY=F))
+      y_set[which.max(tabulate(match(y[g[1:i]], y_set)))])
+    #predictions[[i]] = apply(dists, 2, function(g)
+      #mapply(list, y[g[[1]][1:i]], g[[2]][1:i], SIMPLIFY=F))
   }
   return(predictions)
 }

@@ -1,8 +1,8 @@
 #content {
-    margin-left: 20%;
+    margin-left: 12.5%;
     padding-top: 10vh;
     margin-bottom: 10vh;
-    width: 60%;
+    width: 75%;
     height: 80%
 }
 
@@ -28,6 +28,10 @@ li.key {
     width: 10%;
     padding-left: 0;
     padding-right: 0;
+}
+
+nav {
+    padding-bottom: 2%;
 }
 
 @media screen and (max-width: 800px) {
