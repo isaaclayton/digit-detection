@@ -1,0 +1,41 @@
+#content {
+    margin-left: 20%;
+    padding-top: 10vh;
+    margin-bottom: 10vh;
+    width: 60%;
+    height: 80%
+}
+
+#bodyWrapper {
+    background-color: white;
+    line-height: 200%;
+    font-size:2.5vh;
+    font-family: 'PT Sans', serif;
+    position:relative;
+    height:100%;
+    min-height:100%;
+    width:100%;
+}
+
+#legend {
+    padding: 1.5em 0 0 1.5em;
+}
+
+li.key {
+    border-top-width: 15px;
+    border-top-style: solid;
+    font-size: .75em;
+    width: 10%;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+@media screen and (max-width: 800px) {
+    
+
+    #content {
+        width: 92%;
+        margin-left: 4%;
+    }
+    
+}

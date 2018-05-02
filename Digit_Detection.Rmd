@@ -1,10 +1,12 @@
 ---
-title: "Digit Detection Project"
-author: "Isaac Layton"
-date: "January 26, 2016"
-output: html_document
+output: 
+  html_document:
+    css: digits.css
+
 ---
 
+<div id='bodyWrapper'>
+<div id='content'>
 ```{r echo=FALSE}
 
 #--------------------------------------------------------------------
@@ -21,10 +23,11 @@ Cols=function(vec) {
 #--------------------------------------------------------------------
 
 ```
+#Digit Detection Project
 
   The MNIST dataset is a popular introduction into image classification. It was created by the National Institute of Standards and Technology and contains 42,000 gray-scale pixelated digits hand-drawn by 500 participants. Each digit is recorded by measuring each pixels' darkness level; for a 28-by-28 pixel image, this equates to 784 different variables that range from completely white to completely black. The goal of this project was to preprocess the data using dimension reduction, classify the data using machine learning and nonparametric techniques, and estimate the accuracy of the techniques using cross validation.
   
-#Data Preprocessing
+###Data Preprocessing
 
 I began by creating a function to visualize what the digits looked like. Encoding the darkness as hexidecimal values and plotting the points gave a clear look at digits:
   
@@ -86,15 +89,9 @@ plot(training[graphsubset==1,2:3], col=Cols(training[graphsubset==1,1]),
      pch=19,
        xlab="Principal Component 1",ylab="Principal Component 2", ylim=c(-21,20))
 legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
-#plot(df[graphsubset==1,c(1,3)], col=Cols(df[graphsubset==1,1]), pch=19,
-       #xlab="Principal Component 1",ylab="Principal Component 3", ylim=c(-33,15))
-#legend("bottom",legend=as.character(0:9), pch=19, col=rainbow(10), horiz=T)
-# plot(pr.out$x[graphsubset==1,c(2,3)], col=Cols(scalable_digs[graphsubset==1,1]), pch=19,
-#        xlab="Principal Component 2",ylab="Principal Component 3", ylim=c(-33,15))
-# legend("bottom",legend=as.character(1:10), pch=19, col=rainbow(10), horiz=T)
 ```
 
-#Quadratic Discriminant Analysis
+###Quadratic Discriminant Analysis
 
 
 The first method I chose to classify the data with was quadratic discriminant analysis. This method incorporates [Bayes Theorem](https://brilliant.org/wiki/bayes-theorem/) to estimate $\Pr(Y = k{\mid}X = x)$, the probability of a digit being $k$ given the observation's pixel configuration. Bayes Theorem states that
@@ -124,29 +121,12 @@ QDAFunc = function(testx, trainx, trainy) {
 }
 ```
 
-Using quadratic discriminant analysis on a subset of the digits was a moderately successful way to classify the other subsets. Testing the training set against the validation set, we found the following predictions:
+Using quadratic discriminant analysis on a subset of the digits was a moderately successful way to classify the other subsets.
 
-```{r echo=FALSE}
-table(qda_model, validation[, 1], dnn=c("QDA Predicted", "Actual"))
-kfoldpercentage = sum(qda_model==validation[,1])/length(qda_model)
-```
-
-Quadratic discriminant analysis predicted about `r round(kfoldpercentage*100,2)`% of the digits correctly. 
-
-```{r echo=FALSE}
-# qda.sub = kFolds(scalable_digs[qda.digitsubset==1,], 50)
-# par(mfrow=c(1,2))
-# plot(pr.out$x[qda.digitsubset==1,1:2][qda.sub==1,], col=Cols(scalable_digs[qda.digitsubset==1,1][qda.sub==1]),
-#      pch=19, xlim=c(-15,18),
-#        xlab="Principal Component 1",ylab="Principal Component 2")
-# legend("right",legend=as.character(1:10), pch=19, col=rainbow(10))
-# plot(pr.out$x[qda.digitsubset==1,1:2][qda.sub==1,], col=Cols(qda.class[[1]][qda.sub==1]),
-#      pch=19,xlim=c(-15,18),
-#        xlab="Principal Component 1",ylab="Principal Component 2")
-```
+Quadratic discriminant analysis predicted about `r round(qda_percentage*100,2)`% of the digits correctly. 
 
 
-#Random Forests
+###Random Forests
 
 ```{r echo=FALSE}
 load('~/Desktop/post-grad-learning/digit_detection/Forest.RData')
@@ -156,41 +136,50 @@ rf.percentage = sum(rf.predict==validation[,1])/length(rf.predict)
 
 Another way to classify the data is to use random forests. A decision tree is a method of classifying observations by partioning the input space. It assigns the same prediction to all observations that fall into the same segment of the partition. It's called a tree because it starts with all observations as its "root". It then branches out by choosing the most efficient split in a predictor that will minimize the overall error. It continues doing this until a criterion is met. 
 
-  Random forests build on this concept. In a random forest, multiple decision trees are built using bootstrapped observations. An observation is assigned to the most common class predicted by these trees. Each tree includes only a subset of the predictors to increase reliability. The number of predictors to include in each tree tends to be $\sqrt{p}$ with $p$ being the number of predictors. This ensures that no variable will overpower every tree. 
+  Random forests build on this concept. In a random forest, multiple decision trees are built using bootstrapped observations. An observation is assigned to the most common class predicted by these trees. Each tree includes only a subset of the predictors to increase reliability. The number of predictors to include in each tree tends to be $\sqrt{p}$ with $p$ being the number of predictors. This ensures that no variable will overpower every tree. With our 225 principal components, this value is set at 15. 
   
-  Using random forests on our data and predicting on the validation set gives an accuracy of `r round(rf.percentage*100,2)`%. Below is the predicted vs. actual digit plot: 
+  Using random forests on our data and predicting on the validation set gives an accuracy of `r round(rf.percentage*100,2)`%. 
+
+###K-Nearest Neighbors
+
+K-Nearest Neighbors was the final way in which the data was classified. K-Nearest neighbors involves takng the $k$ observations that are closest (using Euclidean distance) to the test observation and assigns it the most frequent response value. Here is the function I made for it:
+
+```{r echo=TRUE}
+knnclass = function(x, trainx, trainy, k) {
+  y = as.factor(trainy)
+  y_set = levels(y)
+  dists = apply(dist2(x,trainx), 1, order)
+  predictions = list()
+  for (i in k) {
+    predictions[[i]] = apply(dists, 2, function(g)
+      y_set[which.max(tabulate(match(y[g[1:i]], y_set)))])
+  }
+  return(predictions)
+}
+```
+To determine what value of $k$ I should use, I used cross validation on the training set by splitting it into 10 subsets and using k-nearest neighbors to predict one subset with the other 9 and then averaging the 10 error rates. This is what the accuracies looked like for $k$ values between 1 and 25:
+
 ```{r echo=FALSE}
-table(rf.predict, validation[, 1], 
-      dnn=c("Predicted", "Actual"))
+load('~/Desktop/post-grad-learning/digit_detection/knn.RData')
+knnpercentages = vector()
+for (i in 1:25){
+  kpercent = vector()
+  for (j in 1:10) {
+    kpercent = c(kpercent, sum(knntests[[j]][[i]]==training[folds==j,1])/length(knntests[[j]][[i]]))
+  }
+  knnpercentages = c(knnpercentages, mean(kpercent))
+}
+plot(knnpercentages, xlab="Number of Nearest Neighbors",ylab="Accuracy")
 ```
 
-#K-Nearest Neighbors
+The dip at the value of $k=2$ was likely due to the way I coded my function. The way it breaks ties now is choosing the lower digit I'm working on making it choose the digit which has the lowest sum of distances within the $k$ neighborhood. It appears that predicting based on the 6 nearest neighbors gives the best results, with cross-validated accuracy of `r round(knnpercentages[[6]]*100,2)`%.
 
-K-Nearest Neighbors was the final way in which the data was classified. K-Nearest neighbors involves takng the $k$ observations that are closest (using Euclidean distance) to the test observation and assigns it the most frequent response value. Here is how the predicted digit compared to the actual digit:
-```{r echo=FALSE}
-#load('~/Desktop/post-grad-learning/digit_detection/knn.RData')
-#knn.digitsubset = digitsubset
-#table(knntests[[1]], df[knn.digitsubset==1, 1], dnn=c("KNN Predicted", "Actual"))
-#knnpercentages = vector()
-#for (i in 1:10){
-#  knntests[[i]] = knntests[[i]]-1
-#  knnpercentages = c(knnpercentages, sum(knntests[[i]]==df[knn.digitsubset==i,1])/length(knntests[[i]]))
-#}
-```
-Predicting the test digits' values using the 5 closest training digits gave us a cross-validated accuracy of %. 
+###Model decision
 
-```{r echo=FALSE}
-# knn.sub = kFolds(scalable_digs[knn.digitsubset==1,], 50)
-# par(mfrow=c(1,2))
-# plot(pr.out[knn.digitsubset==1,1:2][knn.sub==1,], col=Cols(scalable_digs[knn.digitsubset==1,1][knn.sub==1]),
-#      pch=19,
-#        xlab="Principal Component 1",ylab="Principal Component 2", xlim=c(-25,22))
-# legend("right",legend=as.character(1:10), pch=19, col=rainbow(10))
-# plot(pr.out[knn.digitsubset==1,1:2][knn.sub==1,], col=Cols(knntests[[1]][knn.sub==1]),
-#      pch=19,xlim=c(-25,22),
-#        xlab="Principal Component 1",ylab="Principal Component 2")
-```
+Given that random forests and K-nearest neighbors had similar accuracies, I decided to use K-nearest neighbors because of its interpretability. Using K-nearest neighbors on the test set against the 
 
-#Conclusion
+###Conclusion
 
 Given the three different methods chosen to classify the handwritten digits, the one that ended up doing the best (K-nearest neighbors) was the least complex. This is not to say that different complex models could not classify the data better (Yann LeCun of Facebook shows several of these models at http://yann.lecun.com/exdb/mnist/). One particular model that has shown to be successful recently in image recognition is the convolutional neural network (ConvNets). In addition, further pre-processing could have reduced the error. 
+</div>
+</div>

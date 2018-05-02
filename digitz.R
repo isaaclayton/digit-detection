@@ -61,15 +61,18 @@ digitmap = function(col_list) {
 #-------------------------------------------------------------------------------
 #
 knnclass = function(x, trainx, trainy, k) {
-  y_set = levels(as.factor(trainy))
-  dists = dist2(x,trainx)
-  #new = apply(dist2(x,trainx), 1, function(g) 
-    #y_set[which.max(tabulate(as.factor(trainy[match(sort(g, partial=1:k)[1:k],g)])))])
-  #new = apply(dists, 1, function(g) 
-   # y_set[which.max(table(trainy[order(g)[1:k]]))])
-  new = apply(dists, 1, function(g) 
-    y_set[which.max(tabulate(trainy[order(g)[1:k]]+1))])
-  return(new)
+  y = as.factor(trainy)
+  y_set = levels(y)
+  dists = apply(dist2(x,trainx), 1, function(x) mapply(list, order(x), sort(x), simplify=F))
+  return(dists)
+  predictions = list()
+  for (i in k) {
+    #predictions[[i]] = apply(dists, 2, function(g)
+    #y_set[which.max(tabulate(match(y[g[1:i]], y_set)))])
+    predictions[[i]] = apply(dists, 2, function(g)
+      mapply(list, y[g[[1]][1:i]], g[[2]][1:i], SIMPLIFY=F))
+  }
+  return(predictions)
 }
 #-------------------------------------------------------------------------------
 #QDA Function
@@ -84,11 +87,6 @@ QDAFunc = function(testx, trainx, trainy) {
   QDA_vals = apply(testx, 1, FUN=function(x) y_set[which.max(lapply(c(1:length(y_set)), FUN= function(i) (
     -0.5*(t(x)%*%cov_inv[[i]]%*%as.matrix(x)) + (t(x)%*%cov_inv[[i]]%*%mean_k[i,]) + subtract[i])))])
   return(QDA_vals)
-}
-#-------------------------------------------------------------------------------
-#Random forest function?
-rfFunc = function(testx, trainx, trainy) {
-  
 }
 #-------------------------------------------------------------------------------
 dir = "~/Desktop/post-grad-learning/digit_detection"
@@ -152,10 +150,13 @@ mean(rf.percentages)
 
 #Applying KNN to the dataset
 load(paste(dir, '/knn.RData', sep=""))
-table(knntests[[5]],validation[,1])
 knnpercentages = vector()
-for (i in 5:25){
-  knnpercentages = c(knnpercentages, sum(knntests[[i]]==validation[,1])/length(knntests[[i]]))
+for (i in 1:25){
+  kpercent = vector()
+  for (j in 1:10) {
+    kpercent = c(kpercent, sum(knntests[[j]][[i]]==training[folds==j,1])/length(knntests[[j]][[i]]))
+  }
+  knnpercentages = c(knnpercentages, mean(kpercent))
 }
 mean(knnpercentages)
 plot(knnpercentages)
